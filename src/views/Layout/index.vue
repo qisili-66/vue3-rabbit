@@ -6,7 +6,7 @@ import LayoutFooter from './components/LayoutFooter.vue';
 
 
 <template>
-      <LayoutNav />
+  <LayoutNav />
   <LayoutHeader />
   <LayoutFooter/>
 </template>
