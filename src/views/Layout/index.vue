@@ -17,6 +17,7 @@
 <template>
   <LayoutNav />
   <LayoutHeader />
+  <RouterView />
   <LayoutFooter/>
   <LayoutFixed/>
 </template>
