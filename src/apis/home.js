@@ -14,3 +14,10 @@ export function findNewAPI() {
         url: '/home/new'
     })
 }
+
+//获取人气推荐
+export function findHotAPI() {
+    return httpInstance({
+        url: '/home/hot'
+    })
+}
