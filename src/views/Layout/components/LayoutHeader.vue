@@ -18,7 +18,7 @@ const categoryStore = useCategoryStore();
           <RouterLink to="/">首页</RouterLink>
         </li>
         <li class="app-header-nav-item" v-for="item in categoryStore.categoryList" :key="item.id">
-          <RouterLink :to="`/category/${item.id}`">{{ item.name }}</RouterLink>
+          <RouterLink active-class="active":to="`/category/${item.id}`">{{ item.name }}</RouterLink>
         </li>   
       </ul>
 
@@ -86,6 +86,11 @@ const categoryStore = useCategoryStore();
     flex: 1;                     
     display: flex;
     justify-content: flex-end;   
+  }
+
+  .active{
+    color: $xtxColor;
+    border-bottom: 1px solid $xtxColor;
   }
 
   .search {
