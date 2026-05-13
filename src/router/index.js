@@ -26,6 +26,14 @@ const router = createRouter({
         {
           path:'/category/sub/:id',
           component:SubCategory
+        },
+        {
+          path:'/member/order',
+          component: () => import('@/views/Member/Order.vue') // 需要创建组件
+        },
+        {
+          path:'/member/user',
+          component: () => import('@/views/Member/User.vue') // 需要创建组件
         }
       ]
     },
@@ -35,7 +43,11 @@ const router = createRouter({
     }
 
 
-  ]
+  ],
+  //路由切换时滚动到顶部
+  scrollBehavior() {
+    return { top: 0 }
+  }
 })
 
 export default router

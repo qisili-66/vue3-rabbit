@@ -34,8 +34,15 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 
+const confirm = () => {
+  // 退出登录逻辑
+  // 例如清除token，重定向到登录页
+  router.push('/login')
+}
 </script>
 
 <style scoped lang="scss">
