@@ -1,4 +1,6 @@
 <script setup>
+import DetailHot from './component/DetailHot.vue'
+import ImageView from '@/components/ImageView/index.vue'
 import { getDetail} from '@/apis/detail';
 import { ref, onMounted } from 'vue';
 import {useRoute} from 'vue-router';
@@ -22,6 +24,7 @@ onMounted(()=>{
 
 
 <template>
+  
     <div class="xtx-goods-page" v-if="goods.details">
         <div class="container">
             <div class="bread-container">
@@ -34,11 +37,13 @@ onMounted(()=>{
                 </el-breadcrumb>
             </div>
             <!-- 商品信息 -->
-            <div class="goods">
+            <div class="info-container">
                 <div>
                 <div class="goods-info">
                     <div class="media">
                         <!-- 图片预览区 -->
+
+                      <ImageView :imageList="goods.mainPictures" />
 
                         <!-- 统计数量 -->
                         <ul class="goods-sales">
@@ -97,9 +102,8 @@ onMounted(()=>{
                         加入购物车
                     </el-button>
                 </div>
-
-                    </div>                   
-                </div>
+              </div>
+             </div>     
                 <div class="goods-footer">
                     <div class="goods-article">
                         <!-- 商品详情 -->
@@ -121,15 +125,21 @@ onMounted(()=>{
                                 </div>
                             </div>
                         </div>
+                    </div>
+
                     <!--24热搜-->
                     <div class="goods-aside">
+                      <!--24小时-->
+                       <DetailHot title="24小时热卖" :hotType="1"/>
+                       <!--周-->
+                       <DetailHot title="本周热卖" :hotType="2"/>
+                     </div>
                     </div>
+                  </div>
                 </div>
-                      </div>
-                </div>
-            </div>
         </div>
-    </div>
+        </div>
+
 </template>
 
 
