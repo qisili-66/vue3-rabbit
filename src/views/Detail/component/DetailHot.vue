@@ -22,15 +22,20 @@ const hotList = ref([])
 const route = useRoute()
 
 const getHotList = async () => {
-  const res = await getHotGoodsAPI({
-    id: route.params.id,
-    type: props.hotType,
-  })
-  hotList.value = res.result
+  try {
+    const res = await getHotGoodsAPI({
+      id: route.params.id,
+      type: props.hotType,
+    })
+    hotList.value = res.result || []
+  } catch (error) {
+    console.error('getHotGoodsAPI failed:', error)
+    hotList.value = []
+  }
 }
 
 onMounted(() => {
-  getHotList()
+  getHotList().catch(() => {})
 })
 </script>
 

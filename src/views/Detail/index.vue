@@ -1,7 +1,5 @@
 <script setup>
 import DetailHot from './component/DetailHot.vue'
-import ImageView from '@/components/ImageView/index.vue'
-import XtxSku from '@/components/XtxSku/index.vue'
 import { getDetail} from '@/apis/detail';
 import { ref, onMounted } from 'vue';
 import {useRoute} from 'vue-router';
@@ -11,6 +9,10 @@ const route=useRoute()
 const getGoods=async()=>{ 
     const res=await getDetail(route.params.id)
     goods.value=res.result
+}
+const skuChange=(selectedSku)=>{
+    // Handle SKU selection changes if needed
+    console.log('sku changed', selectedSku)
 }
 onMounted(()=>{
     getGoods()
@@ -40,7 +42,7 @@ onMounted(()=>{
                     <div class="media">
                         <!-- 图片预览区 -->
 
-                      <ImageView :imageList="goods.mainPictures" />
+                      <XtxImageView :imageList="goods.mainPictures" />
 
                         <!-- 统计数量 -->
                         <ul class="goods-sales">
@@ -92,11 +94,11 @@ onMounted(()=>{
                     </dl>
                 </div>
                 <!--sku组件-->
-                <XtxSku :goods="goods" @change="skuChange" />
+                <XtxSkuView :goods="goods" @change="skuChange" />
                 <!--数据组件-->
                 <!--按钮组件-->
                 <div>
-                    <el-button size="lang" class="btn">
+                    <el-button size="large" class="btn">
                         加入购物车
                     </el-button>
                 </div>

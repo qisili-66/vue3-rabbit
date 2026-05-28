@@ -8,9 +8,14 @@ export const useCategoryStore = defineStore('category', () => {
 const categoryList = ref([])
 //action获取导航列表数据
 const getCategory = async () => {
+  try {
     const res = await getCategoryAPI()
     console.log(res)
-  categoryList.value = res.result
+    categoryList.value = res.result || []
+  } catch (error) {
+    console.error('getCategoryAPI failed:', error)
+    categoryList.value = []
+  }
 }
 return { categoryList, getCategory }
 })

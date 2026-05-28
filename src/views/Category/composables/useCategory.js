@@ -10,8 +10,13 @@ const categoryData =ref({})
 const route = useRoute()
 
 const getCategory = async (id = route.params.id) => {
+  try {
     const res = await getCategoryAPI(id)
-    categoryData.value = res.result
+    categoryData.value = res.result || {}
+  } catch (error) {
+    console.error('getCategory failed:', error)
+    categoryData.value = {}
+  }
 }
 
 onMounted(() => {
