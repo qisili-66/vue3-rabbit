@@ -5,7 +5,8 @@
   <nav class="app-topnav">
     <div class="container">
       <ul>
-        <template v-if="true">
+        <!--多模版渲染区分登录状态和非登录状态-->
+        <template v-if="false">
           <li>
             <a href="javascript:;">
               <i class="iconfont icon-user"></i>
