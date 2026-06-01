@@ -3,6 +3,7 @@ import axios from 'axios'
 import 'element-plus/theme-chalk/el-message.css'
 import { ElMessage } from 'element-plus'
 import{ useUserStore } from '../stores/user'
+import route from '@/router'
 
 const httpInstance = axios.create({
   baseURL: '/api',
@@ -24,11 +25,17 @@ const userStore = useUserStore()
 
 // axios响应拦截器
 httpInstance.interceptors.response.use(res => res.data,e => {
+  const userStore = useUserStore()
   //统一错误提示
   ElMessage({
     type: 'warning',
     message: e.response.data.message 
   })
+  //统一错误处理:1、401:删除用户信息。跳转到登录页面
+  if(e.response.status === 401){
+    userStore.clearUserInfo()
+    route.push('/login')
+  }
     return Promise.reject(e)
 })
 

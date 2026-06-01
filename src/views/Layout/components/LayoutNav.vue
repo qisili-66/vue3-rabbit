@@ -7,6 +7,9 @@ const userStore = useUserStore()
 
 const confirm = () => {
   // 退出登录逻辑
+  // 清除用户信息
+  userStore.clearUserInfo()
+  // 跳转到登录页
   router.push('/login')
 }
 </script>

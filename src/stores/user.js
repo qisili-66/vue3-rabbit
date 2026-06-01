@@ -17,11 +17,15 @@ export const useUserStore = defineStore('user',()=>{
        userInfo.value = res.result
        return userInfo.value
     }
-
+  //退出时清除用户信息
+  const clearUserInfo = () => {
+    userInfo.value = {}
+  }
     //3.定义修改状态数据的action函数
     return{
         userInfo,
-        getUserInfo
+        getUserInfo,
+        clearUserInfo
     }
 },{
     persist:true
