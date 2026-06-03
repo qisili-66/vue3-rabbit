@@ -46,6 +46,10 @@ export const useCartStore = defineStore('cart', ()=>{
         }
     }
     
+    //清除购物车
+    const clearCart = () => {
+        cartList.value = []
+    }
 
 
     // 计算总数和总价
@@ -60,6 +64,7 @@ export const useCartStore = defineStore('cart', ()=>{
         cartList,
         addCart,
         delCart,
+        clearCart,
         totalCount,
         totalPrice
     }

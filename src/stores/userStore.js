@@ -3,11 +3,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { loginAPI } from '@/apis/user'
-
+import { useCartStore }from './cartStore'
 
 
 
 export const useUserStore = defineStore('user',()=>{
+  const cartStore = useCartStore()
     //1.定义状态
     const userInfo=ref({})
 
@@ -19,7 +20,8 @@ export const useUserStore = defineStore('user',()=>{
     }
   //退出时清除用户信息
   const clearUserInfo = () => {
-    userInfo.value = {}
+    userInfo.value = {} // 清空用户信息
+   cartStore.clearCart() // 同时清空购物车
   }
     //3.定义修改状态数据的action函数
     return{
