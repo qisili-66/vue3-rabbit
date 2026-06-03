@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { useCategoryStore } from '@/stores/category';
+import { useCategoryStore } from '@/stores/categoryStore';
 import { storeToRefs } from 'pinia';
 
 const categoryStore = useCategoryStore();
