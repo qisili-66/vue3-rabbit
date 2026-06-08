@@ -1,9 +1,11 @@
 <script setup>
-import { getCheckInfoAPI } from '@/apis/checkout'
-import { ref, onMounted, computed } from 'vue'
+import { getCheckInfoAPI, addAddressAPI } from '@/apis/checkout' // 移除 createOrderAPI
+import { useRouter } from 'vue-router'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useCartStore } from '@/stores/cartStore'
 
 const cartStore = useCartStore()
+const router = useRouter()
 const cartGoods = computed(() => cartStore.cartList.filter(item => item.selected !== false))
 const summary = computed(() => {
   const goods = cartGoods.value
@@ -21,6 +23,75 @@ const checkInfo = ref({
   userAddresses: []
 })
 const curAddress = ref({})
+const activeAddress = ref({})
+const showDialog = ref(false)
+const addFlag = ref(false)
+const newAddress = reactive({
+  receiver: '',
+  contact: '',
+  region: [],
+  province: '',
+  city: '',
+  county: '',
+  address: '',
+  isDefault: false
+})
+const addressFormRef = ref(null)
+const regionOptions = [
+  {
+    value: '广东省',
+    label: '广东省',
+    children: [
+      {
+        value: '广州市',
+        label: '广州市',
+        children: [
+          { value: '海珠区', label: '海珠区' },
+          { value: '天河区', label: '天河区' },
+          { value: '越秀区', label: '越秀区' }
+        ]
+      },
+      {
+        value: '深圳市',
+        label: '深圳市',
+        children: [
+          { value: '福田区', label: '福田区' },
+          { value: '南山区', label: '南山区' }
+        ]
+      }
+    ]
+  },
+  {
+    value: '北京市',
+    label: '北京市',
+    children: [
+      {
+        value: '北京市',
+        label: '北京市',
+        children: [
+          { value: '朝阳区', label: '朝阳区' },
+          { value: '海淀区', label: '海淀区' }
+        ]
+      }
+    ]
+  }
+]
+const addressRules = {
+  receiver: [{ required: true, message: '请输入收货人姓名', trigger: 'blur' }],
+  contact: [{ required: true, message: '请输入联系方式', trigger: 'blur' }],
+  region: [
+    {
+      validator: (rule, value) => {
+        return Array.isArray(value) && value.length === 3
+          ? Promise.resolve()
+          : Promise.reject(new Error('请选择省市区'))
+      },
+      trigger: 'change'
+    }
+  ],
+  address: [{ required: true, message: '请输入详细地址', trigger: 'blur' }]
+}
+
 const getCheckoutInfo = async () => {
   const res = await getCheckInfoAPI()
   const data = res.result || {}
@@ -28,11 +99,118 @@ const getCheckoutInfo = async () => {
   checkInfo.value.userAddresses = data.userAddresses || []
   const item = checkInfo.value.userAddresses.find(item => item.isDefault === 0) || checkInfo.value.userAddresses[0] || {}
   curAddress.value = item
+  activeAddress.value = item
+}
+
+const openAddressDialog = () => {
+  activeAddress.value = curAddress.value.id
+    ? curAddress.value
+    : checkInfo.value.userAddresses[0] || {}
+  showDialog.value = true
+}
+
+const switchAddress = (item) => {
+  activeAddress.value = item
+}
+
+const confirm = () => {
+  curAddress.value = activeAddress.value
+  showDialog.value = false
+}
+
+const resetNewAddress = () => {
+  newAddress.receiver = ''
+  newAddress.contact = ''
+  newAddress.region = []
+  newAddress.province = ''
+  newAddress.city = ''
+  newAddress.county = ''
+  newAddress.address = ''
+  newAddress.isDefault = false
+}
+
+const openAddAddressDialog = () => {
+  resetNewAddress()
+  addFlag.value = true
+}
+
+const submitNewAddress = async () => {
+  if (!addressFormRef.value) return
+  // trim inputs to avoid invisible whitespace
+  newAddress.receiver = (newAddress.receiver || '').trim()
+  newAddress.contact = (newAddress.contact || '').trim()
+  newAddress.address = (newAddress.address || '').trim()
+
+  const [province, city, county] = newAddress.region || []
+  newAddress.province = province || ''
+  newAddress.city = city || ''
+  newAddress.county = county || ''
+
+  try {
+    console.log('submitNewAddress payload before validate:', JSON.parse(JSON.stringify(newAddress)))
+    await addressFormRef.value.validate()
+
+    const res = await addAddressAPI({
+      receiver: newAddress.receiver,
+      contact: newAddress.contact,
+      province: newAddress.province,
+      city: newAddress.city,
+      county: newAddress.county,
+      address: newAddress.address,
+      isDefault: newAddress.isDefault ? 0 : 1
+    })
+
+    addFlag.value = false
+    const saved = res.result || {}
+    const newItem = {
+      id: saved.id || `${Date.now()}_${Math.random()}`,
+      receiver: newAddress.receiver,
+      contact: newAddress.contact,
+      fullLocation: `${province}/${city}/${county}`,
+      address: newAddress.address,
+      isDefault: newAddress.isDefault ? 0 : 1,
+      ...saved
+    }
+
+    if (newAddress.isDefault) {
+      checkInfo.value.userAddresses.forEach(item => {
+        item.isDefault = 1
+      })
+      curAddress.value = newItem
+    }
+
+    checkInfo.value.userAddresses.unshift(newItem)
+    activeAddress.value = newItem
+    resetNewAddress()
+    await getCheckoutInfo()
+  } catch (err) {
+    console.warn('submitNewAddress error', err)
+  }
+}
+
+const closeAddDialog = () => {
+  addFlag.value = false
+  resetNewAddress()
 }
 
 onMounted(() => {
   getCheckoutInfo()
 })
+
+// 提交订单：直接跳转到支付页面，并清空购物车中已选中的商品
+const createOrder = () => {
+  // 清空购物车中所有选中的商品（selected === true 的商品）
+  cartStore.cartList = cartStore.cartList.filter(item => item.selected !== true)
+
+  // 生成临时订单ID（用于支付页面参数）
+  const mockOrderId = Date.now().toString()
+  router.push({
+    path: '/pay',
+    query: {
+      id: mockOrderId
+    }
+  })
+}
 </script>
 
 <template>
@@ -67,8 +245,8 @@ onMounted(() => {
               </ul>
             </div>
             <div class="action">
-              <el-button size="large" @click="toggleFlag = true">切换地址</el-button>
-              <el-button size="large" @click="addFlag = true">添加地址</el-button>
+              <el-button size="large" @click="openAddressDialog()">切换地址</el-button>
+              <el-button size="large" @click="openAddAddressDialog()">添加地址</el-button>
             </div>
           </div>
         </div>
@@ -152,7 +330,7 @@ onMounted(() => {
     </div>
   </div>
   <!-- 切换地址 -->
-  <el-dialog title="切换收货地址" width="30%" center v-model="toggleFlag">
+  <el-dialog v-model="showDialog" title="切换收货地址" width="30%" center>
     <div class="addressWrapper">
       <div
         class="text item"
@@ -185,17 +363,45 @@ onMounted(() => {
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="toggleFlag = false">取消</el-button>
+        <el-button @click="showDialog = false">取消</el-button>
         <el-button type="primary" @click="confirm">确定</el-button>
       </span>
     </template>
   </el-dialog>
+
   <!-- 添加地址 -->
+  <el-dialog v-model="addFlag" title="添加收货地址" width="30%" center @close="resetNewAddress">
+    <el-form ref="addressFormRef" :model="newAddress" :rules="addressRules" label-width="90px">
+      <el-form-item label="收货人" prop="receiver">
+        <el-input v-model="newAddress.receiver" placeholder="请输入收货人姓名" />
+      </el-form-item>
+      <el-form-item label="联系方式" prop="contact">
+        <el-input v-model="newAddress.contact" placeholder="请输入联系方式" />
+      </el-form-item>
+      <el-form-item label="省市区" prop="region">
+        <el-cascader
+          v-model="newAddress.region"
+          :options="regionOptions"
+          placeholder="请选择省市区"
+          clearable
+          filterable
+        />
+      </el-form-item>
+      <el-form-item label="详细地址" prop="address">
+        <el-input v-model="newAddress.address" placeholder="请输入详细地址" />
+      </el-form-item>
+      <el-form-item label="设为默认">
+        <el-switch v-model="newAddress.isDefault" active-text="默认地址" inactive-text="普通地址" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="closeAddDialog()">取消</el-button>
+        <el-button type="primary" @click="submitNewAddress">保存</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
-
-
-
-
 
 <style scoped lang="scss">
 .xtx-pay-checkout-page {
