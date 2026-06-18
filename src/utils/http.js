@@ -2,8 +2,8 @@
 import axios from 'axios'
 import 'element-plus/theme-chalk/el-message.css'
 import { ElMessage } from 'element-plus'
-import{ useUserStore } from '../stores/userStore'
-import route from '@/router'
+import { useUserStore } from '../stores/userStore'
+// 为避免与路由文件产生循环依赖，这里不静态导入 router，必要时动态导入
 
 const httpInstance = axios.create({
   baseURL: '/api',
@@ -26,17 +26,36 @@ const userStore = useUserStore()
 // axios响应拦截器
 httpInstance.interceptors.response.use(res => res.data,e => {
   const userStore = useUserStore()
+  // 保护性读取错误信息，避免二次异常
+  const msg = e && e.response && e.response.data && e.response.data.message
+    ? e.response.data.message
+    : (e && e.message) || '请求失败'
   //统一错误提示
-  ElMessage({
-    type: 'warning',
-    message: e.response.data.message 
-  })
-  //统一错误处理:1、401:删除用户信息。跳转到登录页面
-  if(e.response.status === 401){
-    userStore.clearUserInfo()
-    route.push('/login')
+  try {
+    ElMessage({ type: 'warning', message: msg })
+  } catch (err) {
+    // 忽略 ElMessage 异常
+    console.warn('ElMessage failed:', err)
   }
-    return Promise.reject(e)
+  //统一错误处理: 401 -> 删除用户信息并跳转到登录页面
+  if (e && e.response && e.response.status === 401) {
+    try {
+      userStore.clearUserInfo()
+    } catch (err) {
+      console.warn('clearUserInfo failed:', err)
+    }
+    try {
+      // 动态导入路由以避免循环依赖
+      import('@/router')
+        .then(m => {
+          try { m.default.push('/login') } catch (err) { console.warn('router.push failed:', err) }
+        })
+        .catch(err => console.warn('dynamic import router failed:', err))
+    } catch (err) {
+      console.warn('router dynamic import failed:', err)
+    }
+  }
+  return Promise.reject(e)
 })
 
 export default httpInstance

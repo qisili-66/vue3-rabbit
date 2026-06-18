@@ -5,9 +5,14 @@ import { ref, onMounted } from 'vue';
 const bannerList = ref([]);
 
 const getBanner = async () => {
-  const res = await getBannerAPI();
-  console.log(res);
-  bannerList.value = res.result;
+  try{
+    const res = await getBannerAPI();
+    console.log(res);
+    bannerList.value = res.result || [];
+  }catch(err){
+    console.error('getBanner failed:', err)
+    bannerList.value = []
+  }
 }
 onMounted(() => {
   getBanner();

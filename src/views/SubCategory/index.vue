@@ -10,8 +10,13 @@ import GoodsItem from '../Home/components/GoodsItem.vue'
 const categoryData = ref({});
 const route = useRoute();
 const getCategoryData = async () => {
+  try{
    const res = await getCategoryFilterAPI(route.params.id)
-   categoryData.value = res.result;
+   categoryData.value = res.result || {}
+  }catch(err){
+    console.error('getCategoryData failed:', err)
+    categoryData.value = {}
+  }
 }
 onMounted(() => {
   getCategoryData()
@@ -27,9 +32,14 @@ const reqData=ref({
   sortField:'publishTime'
 })
 const getGoodList=async ()=>{
-  const res= await getSubCategoryAPI(reqData.value)
-  console.log(res)
-  goodList.value=res.result.items
+  try{
+    const res= await getSubCategoryAPI(reqData.value)
+    console.log(res)
+    goodList.value=(res.result && res.result.items) || []
+  }catch(err){
+    console.error('getGoodList failed:', err)
+    goodList.value = []
+  }
 }
 onMounted(()=>getGoodList())
 
@@ -45,10 +55,16 @@ const disabled = ref(false) // 是否禁用加载更多
 const load = async() => {
   //获取下一页的数据
   reqData.value.page++
-   const res= await getSubCategoryAPI(reqData.value)
-   goodList.value=[...goodList.value,...res.result.items]
-   //加载完毕
-   if(res.result.items.length===0){
+   try{
+     const res= await getSubCategoryAPI(reqData.value)
+     const items = (res.result && res.result.items) || []
+     goodList.value=[...goodList.value,...items]
+     //加载完毕
+     if(items.length===0){
+       disabled.value = true
+     }
+   }catch(err){
+     console.error('load more failed:', err)
      disabled.value = true
    }
 }

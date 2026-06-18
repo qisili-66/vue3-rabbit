@@ -1,20 +1,33 @@
 <script setup>
-defineProps({
-  goods:{
-    type:Object,
-    default:()=>({})
+import { computed } from 'vue'
+
+const props = defineProps({
+  goods: {
+    type: Object,
+    default: () => ({})
+  },
+  good: {
+    type: Object,
+    default: () => ({})
   }
 })
+
+const currentGoods = computed(() => {
+  return Object.keys(props.goods || {}).length ? props.goods : props.good
+})
+
+const title = computed(() => currentGoods.value?.title || currentGoods.value?.name || '商品详情')
+const description = computed(() => currentGoods.value?.alt || currentGoods.value?.desc || '')
+const detailUrl = computed(() => `/detail/${currentGoods.value?.id || ''}`)
 </script>
 
-
 <template>
-     <RouterLink to="/" class="goods-item">
-              <img v-img-lazy="goods.picture" alt="" />
-              <p class="name ellipsis">{{ goods.name }}</p>
-              <p class="desc ellipsis">{{ goods.desc }}</p>
-              <p class="price">&yen;{{ goods.price }}</p>
-            </RouterLink>
+  <RouterLink :to="detailUrl" class="goods-item">
+    <img v-img-lazy="currentGoods.picture" alt="" />
+    <p class="name ellipsis">{{ title }}</p>
+    <p class="desc ellipsis">{{ description }}</p>
+    <p class="price">&yen;{{ currentGoods.price }}</p>
+  </RouterLink>
 </template>
 
 

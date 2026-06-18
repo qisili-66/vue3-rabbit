@@ -6,12 +6,15 @@ import GoodsItem from './GoodsItem.vue'
 
 const goodsProduct = ref([])
 const getGoods = async () => {
-  const res = await getGoodsAPI()
-  goodsProduct.value = res.result
+  try{
+    const res = await getGoodsAPI()
+    goodsProduct.value = res.result || []
+  }catch(err){
+    console.error('getGoods failed:', err)
+    goodsProduct.value = []
+  }
 }
-onMounted(() => 
-  getGoods()
-  )
+onMounted(() => getGoods())
 </script>
 
 <template>

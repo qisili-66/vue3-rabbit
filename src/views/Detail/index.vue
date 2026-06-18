@@ -9,8 +9,13 @@ const cartStore=useCartStore()
 const goods=ref({})
 const route=useRoute()
 const getGoods=async()=>{ 
+  try{
     const res=await getDetail(route.params.id)
-    goods.value=res.result
+    goods.value=res.result || {}
+  }catch(err){
+    console.error('getGoods failed:', err)
+    goods.value = {}
+  }
 }
 //sku规格被操作时
 let skuObj={}

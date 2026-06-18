@@ -1,12 +1,16 @@
 <script setup>
-import { getCheckInfoAPI, addAddressAPI } from '@/apis/checkout' // 移除 createOrderAPI
+import { getCheckInfoAPI, addAddressAPI, createOrderAPI } from '@/apis/checkout'
 import { useRouter } from 'vue-router'
 import { reactive, ref, onMounted, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useCartStore } from '@/stores/cartStore'
 
 const cartStore = useCartStore()
 const router = useRouter()
-const cartGoods = computed(() => cartStore.cartList.filter(item => item.selected !== false))
+const cartGoods = computed(() => {
+  const selected = cartStore.cartList.filter(item => item.selected !== false)
+  return selected.length ? selected : cartStore.cartList
+})
 const summary = computed(() => {
   const goods = cartGoods.value
   const goodsCount = goods.reduce((sum, item) => sum + (item.count || 0), 0)
@@ -93,13 +97,20 @@ const addressRules = {
 }
 
 const getCheckoutInfo = async () => {
-  const res = await getCheckInfoAPI()
-  const data = res.result || {}
+  try{
+    const res = await getCheckInfoAPI()
+    const data = res.result || {}
 
-  checkInfo.value.userAddresses = data.userAddresses || []
-  const item = checkInfo.value.userAddresses.find(item => item.isDefault === 0) || checkInfo.value.userAddresses[0] || {}
-  curAddress.value = item
-  activeAddress.value = item
+    checkInfo.value.userAddresses = data.userAddresses || []
+    const item = checkInfo.value.userAddresses.find(item => item.isDefault === 0) || checkInfo.value.userAddresses[0] || {}
+    curAddress.value = item
+    activeAddress.value = item
+  }catch(err){
+    console.error('getCheckoutInfo failed:', err)
+    checkInfo.value.userAddresses = []
+    curAddress.value = {}
+    activeAddress.value = {}
+  }
 }
 
 const openAddressDialog = () => {
@@ -197,18 +208,35 @@ onMounted(() => {
   getCheckoutInfo()
 })
 
-// 提交订单：直接跳转到支付页面，并清空购物车中已选中的商品
-const createOrder = () => {
-  // 清空购物车中所有选中的商品（selected === true 的商品）
-  cartStore.cartList = cartStore.cartList.filter(item => item.selected !== true)
+// 提交订单：尝试创建订单并跳转到支付页面，若创建失败则退回到金额直付
+const createOrder = async () => {
+  const amount = summary.value.totalPayPrice.toFixed(2)
+  let orderId = ''
 
-  // 生成临时订单ID（用于支付页面参数）
-  const mockOrderId = Date.now().toString()
+  try {
+    const payload = {
+      addressId: curAddress.value.id,
+      goods: cartGoods.value.map(item => ({
+        skuId: item.skuId,
+        count: item.count || 1
+      }))
+    }
+    const res = await createOrderAPI(payload)
+    orderId = res.result?.id || res.result?.orderId || ''
+  } catch (err) {
+    console.warn('createOrder failed, fallback to pay page', err)
+  }
+
+  const query = {
+    amount
+  }
+  if (orderId) {
+    query.id = orderId
+  }
+
   router.push({
     path: '/pay',
-    query: {
-      id: mockOrderId
-    }
+    query
   })
 }
 </script>
@@ -404,6 +432,8 @@ const createOrder = () => {
 </template>
 
 <style scoped lang="scss">
+@use 'sass:color';
+
 .xtx-pay-checkout-page {
   margin-top: 20px;
 
@@ -605,7 +635,7 @@ const createOrder = () => {
     &.active,
     &:hover {
       border-color: $xtxColor;
-      background: lighten($xtxColor, 50%);
+      background: color.adjust($xtxColor, $lightness: 50%);
     }
 
     > ul {
